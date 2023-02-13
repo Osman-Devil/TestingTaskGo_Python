@@ -11,30 +11,31 @@ headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 "
                   "Safari/537.36 "
 }
-url = f"https://confluence.hflabs.ru/pages/viewpage.action?pageId=1181220999"
 
+url = f"https://confluence.hflabs.ru/pages/viewpage.action?pageId=1181220999"
 r = requests.get(url)
 soup = BS(r.text, "html.parser")
+quotes = soup.find_all("td", class_="confluenceTd") # Поиск нужного класса и парсинга данных
+
+# Создания двух списков
 list1 = ['HTTP-код ответа']
 list2 = ['Описание']
-quotes = soup.find_all("td", class_="confluenceTd")
-
 for quote in quotes:
     if quotes.index(quote) % 2 == 0:
         list1.append(quote.text)
     if quotes.index(quote) % 2 == 1:
         list2.append(quote.text)
 
-
+# Подключение к GoogleSheet
 class GoogleSheet:
-    SPREADSHEET_ID = '1dXE8N7TDA8Xp01xmGpjeu3Rrm2hYWIZyR0PLf2-A3To'
+    SPREADSHEET_ID = '1dXE8N7TDA8Xp01xmGpjeu3Rrm2hYWIZyR0PLf2-A3To' # Ip GoogleSheet
     SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
     service = None
-
+    
     def __init__(self):
         creds = None
         if os.path.exists('token.pickle'):
-            with open('token.pickle', 'rb') as token:
+            with open('token.pickle', 'rb') as token: # Чтобы не запускать каждый раз авторизацию, получили токен
                 creds = pickle.load(token)
 
         if not creds or not creds.valid:
@@ -49,7 +50,8 @@ class GoogleSheet:
                 pickle.dump(creds, token)
 
         self.service = build('sheets', 'v4', credentials=creds)
-
+    
+    # Обновляем ячейки и значения для GoogleSheet
     def updateRangeValues(self, range, values):
         data = [{
             'range': range,
@@ -69,6 +71,7 @@ def main():
     gs = GoogleSheet()
     test_range = 'Test!A1:B'
     test_values = []
+    # Создание единого списка
     for i in list1:
         test_values.append([i, list2[a]])
         a += 1
